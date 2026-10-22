@@ -35,7 +35,7 @@ public final class Workspace {
             switch record.kind {
             case .temp(let url):
                 guard let text = try? TextFile.read(url) else { continue }
-                add(TabDocument(id: record.id, kind: record.kind, text: text))
+                add(TabDocument(id: record.id, kind: record.kind, text: text, fileModDate: modDate(url)))
             case .file(let url):
                 if let text = pending.load(record.id) {
                     add(TabDocument(id: record.id, kind: record.kind, text: text, isDirty: true, fileModDate: modDate(url)))
@@ -46,7 +46,7 @@ public final class Workspace {
         }
         for url in temps.orphans(excluding: Set(tabs.map(\.kind.url))) {
             guard let text = try? TextFile.read(url) else { continue }
-            add(TabDocument(kind: .temp(url), text: text))
+            add(TabDocument(kind: .temp(url), text: text, fileModDate: modDate(url)))
         }
         if tabs.isEmpty {
             try newTab()
@@ -59,7 +59,8 @@ public final class Workspace {
 
     @discardableResult
     public func newTab() throws -> TabDocument {
-        let doc = TabDocument(kind: .temp(try temps.create(now: now())), text: "")
+        let url = try temps.create(now: now())
+        let doc = TabDocument(kind: .temp(url), text: "", fileModDate: modDate(url))
         add(doc)
         activeID = doc.id
         try persistSession()
@@ -77,22 +78,35 @@ public final class Workspace {
     public func updateText(_ id: UUID, _ text: String) {
         guard let doc = tab(id) else { return }
         doc.text = text
+        doc.needsFlush = true
         if !doc.kind.isTemp { doc.isDirty = true }
         onChange?()
     }
 
-    /// Temp notu dosyasına, değişmiş dosya sekmesini bekleyen değişikliklere yazar.
+    /// Yazılmamış metni yazar: temp notu dosyasına, değişmiş dosya sekmesini bekleyen değişikliklere.
+    /// Dokunulmamış temp nota yazılmaz; başka bir uygulamada yapılan değişikliği ezmesin.
     public func flush(_ id: UUID) throws {
-        guard let doc = tab(id) else { return }
+        guard let doc = tab(id), doc.needsFlush else { return }
         switch doc.kind {
-        case .temp(let url): try TextFile.write(doc.text, to: url)
-        case .file: if doc.isDirty { try pending.save(doc.text, for: doc.id) }
+        case .temp(let url):
+            // Notlar klasörü uygulama açıkken silinmiş ya da taşınmış olabilir.
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try TextFile.write(doc.text, to: url)
+            doc.fileModDate = modDate(url)
+        case .file:
+            if doc.isDirty { try pending.save(doc.text, for: doc.id) }
         }
+        doc.needsFlush = false
     }
 
+    /// Bir sekme yazılamasa da diğerlerini ve oturumu yazar; sonra ilk hatayı fırlatır.
     public func flushAll() throws {
-        for doc in tabs { try flush(doc.id) }
+        var firstError: Error?
+        for doc in tabs {
+            do { try flush(doc.id) } catch { firstError = firstError ?? error }
+        }
         try persistSession()
+        if let firstError { throw firstError }
     }
 
     public func closeAction(for id: UUID) -> CloseAction {
@@ -190,18 +204,20 @@ extension Workspace {
         doc.kind = .file(url)
         markSaved(doc, at: url)
         try persistSession()
-        if case .temp(let tempURL) = old {
+        if case .temp(let tempURL) = old, tempURL.canonical != url.canonical {
             // Metin zaten yeni dosyada; temp silinemezse sonraki açılışta sahipsiz not olarak görünür, kayıp olmaz.
             try? temps.moveToTrash(tempURL)
         }
         onChange?()
     }
 
-    /// Değişmemiş dosya sekmelerini, dosya dışarıdan değiştiyse yeniden okur.
+    /// Bizde değişmemiş sekmeleri (temp ya da dosya), dosyası dışarıdan değiştiyse yeniden okur.
     public func reloadChangedFiles() {
         var changed = false
-        for doc in tabs where !doc.isDirty {
-            guard case .file(let url) = doc.kind, let date = modDate(url), date != doc.fileModDate,
+        for doc in tabs {
+            let untouched = doc.kind.isTemp ? !doc.needsFlush : !doc.isDirty
+            let url = doc.kind.url
+            guard untouched, let date = modDate(url), date != doc.fileModDate,
                   let text = try? TextFile.read(url) else { continue }
             doc.text = text
             doc.fileModDate = date
@@ -212,6 +228,7 @@ extension Workspace {
 
     private func markSaved(_ doc: TabDocument, at url: URL) {
         doc.isDirty = false
+        doc.needsFlush = false
         doc.fileModDate = modDate(url)
         pending.remove(doc.id)
     }

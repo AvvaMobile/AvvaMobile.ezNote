@@ -37,9 +37,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Çıkışta hiçbir şey sorulmaz: her şey yazılır, sonraki açılışta aynen geri gelir.
+    /// Yalnız bir şey yazılamadıysa uyarılır, çünkü çıkmak o metni kaybettirir.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        windowController?.flushAll()
-        return .terminateNow
+        guard let error = windowController?.flushAll() else { return .terminateNow }
+        let alert = NSAlert()
+        alert.alertStyle = .critical
+        alert.messageText = "Bazı notlar kaydedilemedi"
+        alert.informativeText = error.localizedDescription + "\n\nÇıkarsan yazılamayan değişiklikler kaybolur."
+        alert.addButton(withTitle: "Vazgeç")
+        alert.addButton(withTitle: "Yine de Çık").hasDestructiveAction = true
+        return alert.runModal() == .alertSecondButtonReturn ? .terminateNow : .terminateCancel
     }
 
     /// Başka bir uygulamada değişen ve bizde değişmemiş dosyaları yeniden okur.

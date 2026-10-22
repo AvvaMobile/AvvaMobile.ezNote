@@ -5,6 +5,7 @@ import NotepadCore
 final class EditorView: NSView {
     weak var textDelegate: NSTextViewDelegate?
     private var views: [UUID: NSScrollView] = [:]
+    private(set) var undoManagers: [UUID: UndoManager] = [:]
     private var font: NSFont
 
     init(font: FontSettings) {
@@ -18,6 +19,14 @@ final class EditorView: NSView {
         views[id]?.documentView as? NSTextView
     }
 
+    /// Sekmenin kendi geri al geçmişi; text view'lar bunu `undoManager(for:)` delegesiyle alır.
+    func undoManager(for id: UUID) -> UndoManager {
+        if let manager = undoManagers[id] { return manager }
+        let manager = UndoManager()
+        undoManagers[id] = manager
+        return manager
+    }
+
     func id(of textView: NSTextView) -> UUID? {
         views.first { $0.value.documentView === textView }?.key
     }
@@ -29,11 +38,16 @@ final class EditorView: NSView {
             view.removeFromSuperview()
             views[id] = nil
         }
+        for id in undoManagers.keys where !ids.contains(id) {
+            undoManagers[id] = nil
+        }
         for doc in tabs {
             let scroll = views[doc.id] ?? makeScrollView(for: doc.id)
             let textView = scroll.documentView as! NSTextView
             if textView.string != doc.text {
                 textView.string = doc.text
+                // Dışarıdan gelen metinde eski geri al adımları geçersiz aralıklara dokunur.
+                undoManagers[doc.id]?.removeAllActions()
             }
             scroll.isHidden = doc.id != activeID
         }

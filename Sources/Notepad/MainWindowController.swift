@@ -7,6 +7,8 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
     let editor: EditorView
     private var shownActiveID: UUID?
     private var autosaveID: UUID?
+    var saveErrorPresenter: (Error) -> Void = { showError("Kaydedilemedi", $0) }
+    private var saveErrorShown = false
 
     init(workspace: Workspace, font: FontSettings) {
         self.workspace = workspace
@@ -58,7 +60,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
     private func sync() {
         let activeID = workspace.activeID
         if let previous = shownActiveID, previous != activeID {
-            try? workspace.flush(previous)
+            flushReporting(previous)
         }
         tabBar.update(
             items: workspace.tabs.map { .init(id: $0.id, title: $0.title, isDirty: $0.isDirty) },
@@ -76,6 +78,11 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
         NSApp.terminate(nil)
     }
 
+    /// Her sekmeye ayrı geri al geçmişi; yoksa ⌘Z gizli sekmedeki metni siler.
+    func undoManager(for view: NSTextView) -> UndoManager? {
+        editor.id(of: view).map(editor.undoManager(for:))
+    }
+
     func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView, let id = editor.id(of: textView) else { return }
         workspace.updateText(id, textView.string)
@@ -84,7 +91,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
 
     /// Yazma 1 sn durunca kaydeder.
     private func scheduleAutosave(_ id: UUID) {
-        if let previous = autosaveID, previous != id { try? workspace.flush(previous) }
+        if let previous = autosaveID, previous != id { flushReporting(previous) }
         autosaveID = id
         NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(autosave), object: nil)
         perform(#selector(autosave), with: nil, afterDelay: 1)
@@ -93,13 +100,31 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
     @objc private func autosave() {
         guard let id = autosaveID else { return }
         autosaveID = nil
-        try? workspace.flush(id)
+        flushReporting(id)
     }
 
-    func flushAll() {
+    /// Yazma hatasını gösterir; her saniye uyarı çıkmasın diye bir kayıt başarılı olana kadar bir kez.
+    func flushReporting(_ id: UUID) {
+        do {
+            try workspace.flush(id)
+            saveErrorShown = false
+        } catch {
+            guard !saveErrorShown else { return }
+            saveErrorShown = true
+            saveErrorPresenter(error)
+        }
+    }
+
+    /// Çıkışta her şeyi yazar; yazılamayan bir şey olursa hatayı döner.
+    func flushAll() -> Error? {
         NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(autosave), object: nil)
         autosaveID = nil
-        try? workspace.flushAll()
+        do {
+            try workspace.flushAll()
+            return nil
+        } catch {
+            return error
+        }
     }
 
     /// Boş temp not ve değişmemiş dosya sorusuz kapanır; diğerlerinde kaydet/sil sorulur.

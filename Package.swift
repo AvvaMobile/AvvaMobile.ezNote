@@ -8,6 +8,7 @@ let package = Package(
         .target(name: "NotepadCore"),
         .executableTarget(name: "Notepad", dependencies: ["NotepadCore"]),
         .testTarget(name: "NotepadCoreTests", dependencies: ["NotepadCore"]),
+        .testTarget(name: "NotepadAppTests", dependencies: ["Notepad", "NotepadCore"]),
     ],
     swiftLanguageModes: [.v5]
 )

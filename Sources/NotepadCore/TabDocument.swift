@@ -7,6 +7,8 @@ public final class TabDocument {
     public var text: String
     /// Yalnız dosya sekmelerinde anlamlı; temp notlar zaten otomatik kaydedilir.
     public var isDirty: Bool
+    /// Bellekte olup henüz diske (temp dosyasına ya da bekleyen değişikliklere) yazılmamış metin var mı.
+    public var needsFlush = false
     public var untitledNumber: Int
     /// Dosyanın son okunduğu ya da yazıldığı andaki değişiklik tarihi; dışarıdan değişikliği fark etmek için.
     public var fileModDate: Date?
