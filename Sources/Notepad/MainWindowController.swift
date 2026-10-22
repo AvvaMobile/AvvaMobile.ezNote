@@ -96,17 +96,85 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate {
         try? workspace.flushAll()
     }
 
+    /// Boş temp not ve değişmemiş dosya sorusuz kapanır; diğerlerinde kaydet/sil sorulur.
     func closeTab(_ id: UUID) {
-        guard workspace.closeAction(for: id) == .closeSilently else {
-            NSSound.beep()
+        guard let doc = workspace.tab(id) else { return }
+        switch workspace.closeAction(for: id) {
+        case .closeSilently:
+            attempt { try workspace.close(id, discard: true) }
+        case .askTemp:
+            workspace.select(id)
+            ask("Bu not kaydedilsin mi?", info: "Sil dersen not Çöp Sepeti'ne taşınır.", buttons: ["Kaydet", "Sil", "Vazgeç"]) { [self] choice in
+                switch choice {
+                case 0: saveTab(id, forcePanel: true) { [self] in attempt { try workspace.close(id, discard: true) } }
+                case 1: attempt { try workspace.close(id, discard: true) }
+                default: break
+                }
+            }
+        case .askFile:
+            workspace.select(id)
+            ask("\"\(doc.kind.url.lastPathComponent)\" dosyasındaki değişiklikler kaydedilsin mi?", info: "", buttons: ["Kaydet", "Kaydetme", "Vazgeç"]) { [self] choice in
+                switch choice {
+                case 0: saveTab(id, forcePanel: false) { [self] in attempt { try workspace.close(id, discard: true) } }
+                case 1: attempt { try workspace.close(id, discard: true) }
+                default: break
+                }
+            }
+        }
+    }
+
+    /// Üç düğmeli soru; ikinci düğme yıkıcı, üçüncü Esc ile seçilir. `done` seçilen düğmenin sırasını alır.
+    private func ask(_ title: String, info: String, buttons: [String], done: @escaping (Int) -> Void) {
+        guard let window else { return }
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = info
+        buttons.forEach { alert.addButton(withTitle: $0) }
+        alert.buttons[1].hasDestructiveAction = true
+        alert.buttons[2].keyEquivalent = "\u{1b}"
+        alert.beginSheetModal(for: window) { response in
+            let index = response.rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
+            // Kaydet paneli de sheet; uyarı sheet'i tamamen kapanınca açılsın.
+            DispatchQueue.main.async { done(index) }
+        }
+    }
+
+    /// Konum gerekiyorsa (ya da Farklı Kaydet ise) panel açar; başarıyla kaydedilirse `then` çalışır.
+    private func saveTab(_ id: UUID, forcePanel: Bool, then: (() -> Void)? = nil) {
+        guard let doc = workspace.tab(id) else { return }
+        guard forcePanel || workspace.needsSavePanel(id) else {
+            if attempt("Kaydedilemedi", { try workspace.save(id) }) { then?() }
             return
         }
-        attempt { try workspace.close(id, discard: true) }
+        guard let window else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = suggestedFileName(doc)
+        panel.beginSheetModal(for: window) { [self] response in
+            guard response == .OK, let url = panel.url else { return }
+            if attempt("Kaydedilemedi", { try workspace.saveAs(id, to: url) }) { then?() }
+        }
+    }
+
+    private func suggestedFileName(_ doc: TabDocument) -> String {
+        if !doc.kind.isTemp { return doc.kind.url.lastPathComponent }
+        let name = doc.title.replacingOccurrences(of: "…", with: "")
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+        return name + ".txt"
     }
 
     /// Hata olursa kullanıcıya gösterir.
-    func attempt(_ title: String = "Kaydedilemedi", _ work: () throws -> Void) {
-        do { try work() } catch { showError(title, error) }
+    @discardableResult
+    func attempt(_ title: String = "Kaydedilemedi", _ work: () throws -> Void) -> Bool {
+        do {
+            try work()
+            return true
+        } catch {
+            showError(title, error)
+            return false
+        }
     }
 
     @objc func newTabAction(_ sender: Any?) {
@@ -115,5 +183,40 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate {
 
     @objc func closeTabAction(_ sender: Any?) {
         if let id = workspace.activeID { closeTab(id) }
+    }
+
+    @objc func saveAction(_ sender: Any?) {
+        if let id = workspace.activeID { saveTab(id, forcePanel: false) }
+    }
+
+    @objc func saveAsAction(_ sender: Any?) {
+        if let id = workspace.activeID { saveTab(id, forcePanel: true) }
+    }
+
+    @objc func openAction(_ sender: Any?) {
+        guard let window else { return }
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.allowsMultipleSelection = true
+        panel.beginSheetModal(for: window) { [self] response in
+            guard response == .OK else { return }
+            let urls = panel.urls
+            // Uyarı gerekirse panel kapandıktan sonra çıksın.
+            DispatchQueue.main.async { [self] in urls.forEach(open) }
+        }
+    }
+
+    private func open(_ url: URL) {
+        do {
+            try workspace.open(url)
+        } catch TextFileError.notUTF8 {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "Bu dosya açılamadı"
+            alert.informativeText = "\(AppInfo.name) yalnız UTF-8 düz metin dosyalarını açabilir."
+            alert.runModal()
+        } catch {
+            showError("Bu dosya açılamadı", error)
+        }
     }
 }

@@ -34,6 +34,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return .terminateNow
     }
 
+    /// Başka bir uygulamada değişen ve bizde değişmemiş dosyaları yeniden okur.
+    func applicationDidBecomeActive(_ notification: Notification) {
+        windowController?.workspace.reloadChangedFiles()
+    }
+
     /// Uygulama adı değiştiyse eski adın klasörlerini yeni ada taşır.
     private func migrateIfRenamed() {
         let defaults = UserDefaults.standard
