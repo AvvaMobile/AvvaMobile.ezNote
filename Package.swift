@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     targets: [
         .target(name: "NotepadCore"),
+        .executableTarget(name: "Notepad", dependencies: ["NotepadCore"]),
         .testTarget(name: "NotepadCoreTests", dependencies: ["NotepadCore"]),
     ],
     swiftLanguageModes: [.v5]
