@@ -56,15 +56,12 @@ enum MainMenu {
             findNext,
         ])
 
-        // ⌘= ABD klavyesinde ⌘+ demek; gizli öğe ikisini de yakalar.
-        let zoomInAlt = item("Büyüt", #selector(NotepadActions.zoomInAction(_:)), "=")
-        zoomInAlt.isHidden = true
-        zoomInAlt.allowsKeyEquivalentWhenHidden = true
+        // ⌘= ve Türkçe Q'daki ⌘* da büyütür; onları AppDelegate'teki tuş dinleyicisi yakalar.
         main.addSubmenu("Görünüm", [
             item("Büyüt", #selector(NotepadActions.zoomInAction(_:)), "+"),
-            zoomInAlt,
             item("Küçült", #selector(NotepadActions.zoomOutAction(_:)), "-"),
         ])
+
         return main
     }
 

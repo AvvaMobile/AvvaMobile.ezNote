@@ -1,7 +1,7 @@
 import AppKit
 import NotepadCore
 
-final class MainWindowController: NSWindowController, NSTextViewDelegate {
+final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWindowDelegate {
     let workspace: Workspace
     private let tabBar = TabBarView()
     let editor: EditorView
@@ -23,6 +23,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate {
         if !window.setFrameUsingName("MainWindow") { window.center() }
         window.setFrameAutosaveName("MainWindow")
         layout(in: window)
+        window.delegate = self
 
         editor.textDelegate = self
         tabBar.onSelect = { [weak self] in self?.workspace.select($0) }
@@ -68,6 +69,11 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate {
             window?.makeFirstResponder(textView)
         }
         shownActiveID = activeID
+    }
+
+    /// Ana pencereyi kapatmak uygulamadan çıkmak demek (Ayarlar penceresi açık kalsa bile).
+    func windowWillClose(_ notification: Notification) {
+        NSApp.terminate(nil)
     }
 
     func textDidChange(_ notification: Notification) {

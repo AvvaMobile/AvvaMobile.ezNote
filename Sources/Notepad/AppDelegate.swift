@@ -1,14 +1,18 @@
 import AppKit
+import SwiftUI
 import NotepadCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowController: MainWindowController?
     private let fontStore = FontSettingsStore()
+    private lazy var fontModel = FontModel(settings: fontStore.load())
+    private var settingsWindow: NSWindow?
     private let lastAppNameKey = "lastAppName"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         migrateIfRenamed()
         NSApp.mainMenu = MainMenu.build()
+        installZoomKeys()
 
         let workspace = Workspace(paths: .live())
         do {
@@ -18,7 +22,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.terminate(nil)
             return
         }
-        let controller = MainWindowController(workspace: workspace, font: fontStore.load())
+        let controller = MainWindowController(workspace: workspace, font: fontModel.settings)
+        fontModel.onChange = { [weak self] settings in
+            self?.fontStore.save(settings)
+            self?.windowController?.editor.apply(settings)
+        }
         windowController = controller
         controller.showWindow(nil)
         NSApp.activate()
@@ -37,6 +45,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Başka bir uygulamada değişen ve bizde değişmemiş dosyaları yeniden okur.
     func applicationDidBecomeActive(_ notification: Notification) {
         windowController?.workspace.reloadChangedFiles()
+    }
+
+    /// ⌘+ Türkçe Q klavyede Shift+4'e denk gelir ve sistemin ekran görüntüsüyle çakışır.
+    /// Bu yüzden ⌘= (ABD) ve ⌘* (Türkçe Q'da -'nin solu) da büyütür.
+    private func installZoomKeys() {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(.shift)
+            guard mods == .command, let key = event.charactersIgnoringModifiers, ["=", "*"].contains(key) else { return event }
+            self?.zoomInAction(nil)
+            return nil
+        }
+    }
+
+    @objc func zoomInAction(_ sender: Any?) {
+        fontModel.settings = fontModel.settings.zoomedIn()
+    }
+
+    @objc func zoomOutAction(_ sender: Any?) {
+        fontModel.settings = fontModel.settings.zoomedOut()
+    }
+
+    /// Ana pencere öndeyken ⌘W sekmeyi kapatır (MainWindowController); Ayarlar öndeyse buraya düşer ve onu kapatır.
+    @objc func closeTabAction(_ sender: Any?) {
+        NSApp.keyWindow?.performClose(nil)
+    }
+
+    @objc func showSettingsAction(_ sender: Any?) {
+        if settingsWindow == nil {
+            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: fontModel)))
+            window.title = "Ayarlar"
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            settingsWindow = window
+        }
+        settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
     /// Uygulama adı değiştiyse eski adın klasörlerini yeni ada taşır.
