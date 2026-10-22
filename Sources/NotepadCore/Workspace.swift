@@ -143,3 +143,76 @@ public final class Workspace {
         (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
     }
 }
+
+// MARK: - Dosya işlemleri
+
+extension Workspace {
+    /// Dosyayı yeni sekmede açar; zaten açıksa o sekmeyi seçer. UTF-8 değilse `TextFileError.notUTF8`.
+    @discardableResult
+    public func open(_ url: URL) throws -> TabDocument {
+        if let existing = tabs.first(where: { $0.kind.url.canonical == url.canonical }) {
+            select(existing.id)
+            return existing
+        }
+        let doc = TabDocument(kind: .file(url), text: try TextFile.read(url), fileModDate: modDate(url))
+        add(doc)
+        activeID = doc.id
+        try persistSession()
+        onChange?()
+        return doc
+    }
+
+    /// Temp notta ya da dosyası artık diskte olmayan sekmede konum sorulmalı.
+    public func needsSavePanel(_ id: UUID) -> Bool {
+        guard let doc = tab(id) else { return false }
+        switch doc.kind {
+        case .temp: return true
+        case .file(let url): return !FileManager.default.fileExists(atPath: url.path)
+        }
+    }
+
+    public func save(_ id: UUID) throws {
+        guard let doc = tab(id), case .file(let url) = doc.kind else { return }
+        try TextFile.write(doc.text, to: url)
+        markSaved(doc, at: url)
+        onChange?()
+    }
+
+    /// Sekmeyi `url`'ye bağlar. Temp notun eski dosyası Çöp Sepeti'ne gider; aynı dosya başka sekmede açıksa o sekme kapanır.
+    public func saveAs(_ id: UUID, to url: URL) throws {
+        guard let doc = tab(id) else { return }
+        try TextFile.write(doc.text, to: url)
+        let old = doc.kind
+        for other in tabs where other.id != id && other.kind.url.canonical == url.canonical {
+            pending.remove(other.id)
+        }
+        tabs.removeAll { $0.id != id && $0.kind.url.canonical == url.canonical }
+        doc.kind = .file(url)
+        markSaved(doc, at: url)
+        try persistSession()
+        if case .temp(let tempURL) = old {
+            // Metin zaten yeni dosyada; temp silinemezse sonraki açılışta sahipsiz not olarak görünür, kayıp olmaz.
+            try? temps.moveToTrash(tempURL)
+        }
+        onChange?()
+    }
+
+    /// Değişmemiş dosya sekmelerini, dosya dışarıdan değiştiyse yeniden okur.
+    public func reloadChangedFiles() {
+        var changed = false
+        for doc in tabs where !doc.isDirty {
+            guard case .file(let url) = doc.kind, let date = modDate(url), date != doc.fileModDate,
+                  let text = try? TextFile.read(url) else { continue }
+            doc.text = text
+            doc.fileModDate = date
+            changed = true
+        }
+        if changed { onChange?() }
+    }
+
+    private func markSaved(_ doc: TabDocument, at url: URL) {
+        doc.isDirty = false
+        doc.fileModDate = modDate(url)
+        pending.remove(doc.id)
+    }
+}
