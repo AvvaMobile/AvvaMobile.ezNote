@@ -12,6 +12,12 @@ final class MainMenuTests: XCTestCase {
         XCTAssertEqual(appMenu.items[about + 1].action, #selector(NotepadActions.buyMeACoffeeAction(_:)))
     }
 
+    func testAppIsNamedEzNote() throws {
+        XCTAssertEqual(AppInfo.name, "ezNote")
+        let appMenu = try XCTUnwrap(MainMenu.build().items.first?.submenu)
+        XCTAssertTrue(appMenu.items.map(\.title).contains("Quit ezNote"))
+    }
+
     func testCoffeeLink() {
         XCTAssertEqual(AppInfo.coffeeURL.absoluteString, "https://buymeacoffee.com/muratyilmaz")
     }
