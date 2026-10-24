@@ -11,6 +11,7 @@ import NotepadCore
     func zoomInAction(_ sender: Any?)
     func zoomOutAction(_ sender: Any?)
     func showSettingsAction(_ sender: Any?)
+    func buyMeACoffeeAction(_ sender: Any?)
 }
 
 enum MainMenu {
@@ -20,6 +21,7 @@ enum MainMenu {
 
         main.addSubmenu(name, [
             item("About \(name)", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
+            item("Buy Me a Coffee…", #selector(NotepadActions.buyMeACoffeeAction(_:))),
             .separator(),
             item("Settings…", #selector(NotepadActions.showSettingsAction(_:)), ","),
             .separator(),
