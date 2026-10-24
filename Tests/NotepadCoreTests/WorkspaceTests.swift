@@ -8,7 +8,7 @@ final class WorkspaceTests: WorkspaceTestCase {
         XCTAssertTrue(ws.tabs[0].kind.isTemp)
         XCTAssertEqual(ws.tabs[0].kind.url.deletingLastPathComponent().canonical, paths.notesDir.canonical)
         XCTAssertTrue(exists(ws.tabs[0].kind.url))
-        XCTAssertEqual(ws.active?.title, "Adsız 1")
+        XCTAssertEqual(ws.active?.title, "Untitled 1")
     }
 
     func testNewTabIsAppendedAndSelected() throws {
@@ -23,7 +23,7 @@ final class WorkspaceTests: WorkspaceTestCase {
         let second = try ws.newTab()
         try ws.newTab()
         try ws.close(second.id, discard: true)
-        XCTAssertEqual(try ws.newTab().title, "Adsız 2")
+        XCTAssertEqual(try ws.newTab().title, "Untitled 2")
     }
 
     func testFlushWritesTempFile() throws {
@@ -113,7 +113,7 @@ final class WorkspaceTests: WorkspaceTestCase {
     }
 
     func testRestoreDoesNotAdoptFileTabInNotesDir() throws {
-        let inNotes = paths.notesDir.appending(path: "Not 2026-10-22 14.30.05.txt")
+        let inNotes = paths.notesDir.appending(path: "Note 2026-10-22 14.30.05.txt")
         try paths.ensureDirectories()
         try TextFile.write("dosya", to: inNotes)
         let id = UUID()

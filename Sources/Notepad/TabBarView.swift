@@ -58,9 +58,9 @@ final class TabBarView: NSView {
             tab.onClose = { [weak self] in self?.onClose?(item.id) }
             stack.addArrangedSubview(tab)
         }
-        let plus = NSButton(image: NSImage(systemSymbolName: "plus", accessibilityDescription: "Yeni Sekme")!, target: self, action: #selector(newTab))
+        let plus = NSButton(image: NSImage(systemSymbolName: "plus", accessibilityDescription: "New Tab")!, target: self, action: #selector(newTab))
         plus.isBordered = false
-        plus.toolTip = "Yeni Sekme"
+        plus.toolTip = "New Tab"
         stack.addArrangedSubview(plus)
         plus.centerYAnchor.constraint(equalTo: stack.centerYAnchor, constant: 2).isActive = true
 
@@ -93,7 +93,7 @@ private final class TabItemView: NSView {
         label.textColor = isActive ? .labelColor : .secondaryLabelColor
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let close = NSButton(image: NSImage(systemSymbolName: "xmark", accessibilityDescription: "Sekmeyi Kapat")!, target: nil, action: nil)
+        let close = NSButton(image: NSImage(systemSymbolName: "xmark", accessibilityDescription: "Close Tab")!, target: nil, action: nil)
         close.isBordered = false
         close.imageScaling = .scaleProportionallyDown
         close.target = self

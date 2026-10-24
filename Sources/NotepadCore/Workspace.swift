@@ -146,7 +146,7 @@ public final class Workspace {
         try sessionStore.save(Session(tabs: tabs.map { TabRecord(id: $0.id, kind: $0.kind) }, activeTabID: activeID))
     }
 
-    /// Sekmeyi ekler ve açık sekmelerde kullanılmayan en küçük "Adsız" numarasını verir.
+    /// Sekmeyi ekler ve açık sekmelerde kullanılmayan en küçük "Untitled" numarasını verir.
     private func add(_ doc: TabDocument) {
         let used = Set(tabs.map(\.untitledNumber))
         doc.untitledNumber = (1...).first { !used.contains($0) }!

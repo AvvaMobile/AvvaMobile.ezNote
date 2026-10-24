@@ -27,7 +27,7 @@ final class TempNoteStoreTests: TempDirTestCase {
 
     func testCreateUsesDateNameAndWritesEmptyFile() throws {
         let url = try TempNoteStore(dir: root).create(now: now)
-        XCTAssertEqual(url.lastPathComponent, "Not 2026-10-22 14.30.05.txt")
+        XCTAssertEqual(url.lastPathComponent, "Note 2026-10-22 14.30.05.txt")
         XCTAssertTrue(exists(url))
         XCTAssertEqual(try Data(contentsOf: url).count, 0)
     }
@@ -36,15 +36,17 @@ final class TempNoteStoreTests: TempDirTestCase {
         let store = TempNoteStore(dir: root)
         _ = try store.create(now: now)
         let second = try store.create(now: now)
-        XCTAssertEqual(second.lastPathComponent, "Not 2026-10-22 14.30.05 2.txt")
+        XCTAssertEqual(second.lastPathComponent, "Note 2026-10-22 14.30.05 2.txt")
     }
 
     func testIsTempName() {
         let store = TempNoteStore(dir: root)
-        XCTAssertTrue(store.isTempName("Not 2026-10-22 14.30.05.txt"))
-        XCTAssertTrue(store.isTempName("Not 2026-10-22 14.30.05 2.txt"))
+        XCTAssertTrue(store.isTempName("Note 2026-10-22 14.30.05.txt"))
+        XCTAssertTrue(store.isTempName("Note 2026-10-22 14.30.05 2.txt"))
         XCTAssertFalse(store.isTempName("Alisveris.txt"))
-        XCTAssertFalse(store.isTempName("Not.txt"))
+        XCTAssertFalse(store.isTempName("Note.txt"))
+        // Türkçe sürümün eski adları da tanınır.
+        XCTAssertTrue(store.isTempName("Not 2026-10-22 14.30.05.txt"))
     }
 
     func testOrphansExcludesKnownAndNonTempFiles() throws {

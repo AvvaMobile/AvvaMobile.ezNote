@@ -19,47 +19,47 @@ enum MainMenu {
         let name = AppInfo.name
 
         main.addSubmenu(name, [
-            item("\(name) Hakkında", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
+            item("About \(name)", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
             .separator(),
-            item("Ayarlar…", #selector(NotepadActions.showSettingsAction(_:)), ","),
+            item("Settings…", #selector(NotepadActions.showSettingsAction(_:)), ","),
             .separator(),
-            item("\(name)'ı Gizle", #selector(NSApplication.hide(_:)), "h"),
-            item("Diğerlerini Gizle", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
+            item("Hide \(name)", #selector(NSApplication.hide(_:)), "h"),
+            item("Hide Others", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
             .separator(),
-            item("Çıkış", #selector(NSApplication.terminate(_:)), "q"),
+            item("Quit \(name)", #selector(NSApplication.terminate(_:)), "q"),
         ])
 
-        main.addSubmenu("Dosya", [
-            item("Yeni Sekme", #selector(NotepadActions.newTabAction(_:)), "t"),
-            item("Aç…", #selector(NotepadActions.openAction(_:)), "o"),
+        main.addSubmenu("File", [
+            item("New Tab", #selector(NotepadActions.newTabAction(_:)), "t"),
+            item("Open…", #selector(NotepadActions.openAction(_:)), "o"),
             .separator(),
-            item("Kaydet", #selector(NotepadActions.saveAction(_:)), "s"),
-            item("Farklı Kaydet…", #selector(NotepadActions.saveAsAction(_:)), "s", [.command, .shift]),
+            item("Save", #selector(NotepadActions.saveAction(_:)), "s"),
+            item("Save As…", #selector(NotepadActions.saveAsAction(_:)), "s", [.command, .shift]),
             .separator(),
-            item("Sekmeyi Kapat", #selector(NotepadActions.closeTabAction(_:)), "w"),
+            item("Close Tab", #selector(NotepadActions.closeTabAction(_:)), "w"),
         ])
 
-        let find = item("Bul…", #selector(NSTextView.performTextFinderAction(_:)), "f")
+        let find = item("Find…", #selector(NSTextView.performTextFinderAction(_:)), "f")
         find.tag = NSTextFinder.Action.showFindInterface.rawValue
-        let findNext = item("Sonrakini Bul", #selector(NSTextView.performTextFinderAction(_:)), "g")
+        let findNext = item("Find Next", #selector(NSTextView.performTextFinderAction(_:)), "g")
         findNext.tag = NSTextFinder.Action.nextMatch.rawValue
-        main.addSubmenu("Düzen", [
-            item("Geri Al", Selector(("undo:")), "z"),
-            item("Yinele", Selector(("redo:")), "z", [.command, .shift]),
+        main.addSubmenu("Edit", [
+            item("Undo", Selector(("undo:")), "z"),
+            item("Redo", Selector(("redo:")), "z", [.command, .shift]),
             .separator(),
-            item("Kes", #selector(NSText.cut(_:)), "x"),
-            item("Kopyala", #selector(NSText.copy(_:)), "c"),
-            item("Yapıştır", #selector(NSText.paste(_:)), "v"),
-            item("Tümünü Seç", #selector(NSText.selectAll(_:)), "a"),
+            item("Cut", #selector(NSText.cut(_:)), "x"),
+            item("Copy", #selector(NSText.copy(_:)), "c"),
+            item("Paste", #selector(NSText.paste(_:)), "v"),
+            item("Select All", #selector(NSText.selectAll(_:)), "a"),
             .separator(),
             find,
             findNext,
         ])
 
         // ⌘= ve Türkçe Q'daki ⌘* da büyütür; onları AppDelegate'teki tuş dinleyicisi yakalar.
-        main.addSubmenu("Görünüm", [
-            item("Büyüt", #selector(NotepadActions.zoomInAction(_:)), "+"),
-            item("Küçült", #selector(NotepadActions.zoomOutAction(_:)), "-"),
+        main.addSubmenu("View", [
+            item("Zoom In", #selector(NotepadActions.zoomInAction(_:)), "+"),
+            item("Zoom Out", #selector(NotepadActions.zoomOutAction(_:)), "-"),
         ])
 
         return main
