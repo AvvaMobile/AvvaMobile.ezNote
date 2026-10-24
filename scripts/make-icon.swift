@@ -1,5 +1,5 @@
 // Uygulama simgesini üretir: swift scripts/make-icon.swift <çıktı.iconset>
-// Mavi zemin üstünde beyaz, spiralli ve çizgili bir not kâğıdı ile çapraz bir kalem.
+// Mavi zemin üstünde beyaz, spiralli ve çizgili bir not kâğıdı.
 import AppKit
 
 let output = URL(fileURLWithPath: CommandLine.arguments[1])
@@ -28,65 +28,36 @@ func render(_ pixels: Int) -> Data {
     let white = rgb(255, 255, 255)
     let cut = rgb(58, 132, 228)
 
-    // Kâğıt
-    let paper = NSRect(x: 262, y: 190, width: 500, height: 600)
+    // Kâğıt: halkalarla birlikte zeminin tam ortasında, her yandan geniş boşluk
+    let ringOverhang: CGFloat = 44
+    let paperSize = NSSize(width: 420, height: 470)
+    let paper = NSRect(x: (1024 - paperSize.width) / 2, y: (1024 - paperSize.height - ringOverhang) / 2,
+                       width: paperSize.width, height: paperSize.height)
     white.setFill()
-    NSBezierPath(roundedRect: paper, xRadius: 36, yRadius: 36).fill()
+    NSBezierPath(roundedRect: paper, xRadius: 34, yRadius: 34).fill()
 
     // Üst şeridi kâğıttan ayıran boşluk
     cut.setFill()
-    NSBezierPath(rect: NSRect(x: paper.minX, y: paper.maxY - 118, width: paper.width, height: 14)).fill()
+    NSBezierPath(rect: NSRect(x: paper.minX, y: paper.maxY - 100, width: paper.width, height: 12)).fill()
 
     // Çizgiler
     for i in 0..<5 {
-        NSBezierPath(roundedRect: NSRect(x: paper.minX + 60, y: paper.maxY - 200 - CGFloat(i) * 78, width: paper.width - 120, height: 14),
-                     xRadius: 7, yRadius: 7).fill()
+        NSBezierPath(roundedRect: NSRect(x: paper.minX + 50, y: paper.maxY - 170 - CGFloat(i) * 62, width: paper.width - 100, height: 13),
+                     xRadius: 6.5, yRadius: 6.5).fill()
     }
 
     // Spiral halkalar: kâğıttaki delik mavi, halka beyaz ve mavi çerçeveli
     for i in 0..<5 {
-        let x = paper.minX + 80 + CGFloat(i) * 85
+        let x = paper.minX + 62 + CGFloat(i) * 74
         cut.setFill()
-        NSBezierPath(ovalIn: NSRect(x: x - 15, y: paper.maxY - 70, width: 30, height: 30)).fill()
-        let ring = NSBezierPath(roundedRect: NSRect(x: x - 11, y: paper.maxY - 56, width: 22, height: 100), xRadius: 11, yRadius: 11)
+        NSBezierPath(ovalIn: NSRect(x: x - 14, y: paper.maxY - 64, width: 28, height: 28)).fill()
+        let ring = NSBezierPath(roundedRect: NSRect(x: x - 10, y: paper.maxY - 52, width: 20, height: 52 + ringOverhang), xRadius: 10, yRadius: 10)
         cut.setStroke()
-        ring.lineWidth = 12
+        ring.lineWidth = 11
         ring.stroke()
         white.setFill()
         ring.fill()
     }
-
-    // Kalem: sağ altta, 45 derece; kâğıttan ayrılsın diye kalın mavi çerçeve
-    NSGraphicsContext.saveGraphicsState()
-    let t = NSAffineTransform()
-    t.translateX(by: 700, yBy: 300)
-    t.rotate(byDegrees: 135)
-    t.concat()
-    let w: CGFloat = 78
-    let pencil = NSBezierPath()
-    pencil.move(to: NSPoint(x: -100, y: 0))
-    pencil.line(to: NSPoint(x: 0, y: -w / 2))
-    pencil.line(to: NSPoint(x: 400, y: -w / 2))
-    pencil.appendArc(withCenter: NSPoint(x: 400, y: 0), radius: w / 2, startAngle: -90, endAngle: 90)
-    pencil.line(to: NSPoint(x: 0, y: w / 2))
-    pencil.close()
-    cut.setStroke()
-    pencil.lineWidth = 28
-    pencil.lineJoinStyle = .round
-    pencil.stroke()
-    white.setFill()
-    pencil.fill()
-    // Uç ile gövde ve gövde ile silgi arasındaki ayrım çizgileri
-    cut.setFill()
-    NSBezierPath(rect: NSRect(x: -4, y: -w / 2, width: 12, height: w)).fill()
-    NSBezierPath(rect: NSRect(x: 330, y: -w / 2, width: 12, height: w)).fill()
-    let lead = NSBezierPath()
-    lead.move(to: NSPoint(x: -62, y: -15))
-    lead.line(to: NSPoint(x: -100, y: 0))
-    lead.line(to: NSPoint(x: -62, y: 15))
-    lead.close()
-    lead.fill()
-    NSGraphicsContext.restoreGraphicsState()
 
     NSGraphicsContext.restoreGraphicsState()
     return rep.representation(using: .png, properties: [:])!
