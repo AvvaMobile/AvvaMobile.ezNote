@@ -1,10 +1,10 @@
 #!/bin/zsh
-# build/Notepad#.app paketini üretir (arm64 + x86_64, ad-hoc imzalı).
+# build/ezNote.app paketini üretir (arm64 + x86_64, ad-hoc imzalı).
 set -euo pipefail
 cd "${0:A:h}/.."
 
 ROOT=$PWD
-APP="$ROOT/build/Notepad#.app"
+APP="$ROOT/build/ezNote.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 

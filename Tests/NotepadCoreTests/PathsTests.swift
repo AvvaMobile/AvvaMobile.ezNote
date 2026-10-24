@@ -49,3 +49,28 @@ final class PathsTests: TempDirTestCase {
         XCTAssertFalse(exists(docs.appending(path: "Yeni")))
     }
 }
+
+final class RenameRestoreTests: WorkspaceTestCase {
+    /// Ad değişince sekmeler aynı sırayla, aynı aktif sekmeyle, notlar klasörüne kaydedilmiş dosyalar dahil geri gelmeli.
+    func testRenameKeepsTabOrderActiveTabAndFilesInNotesFolder() throws {
+        let docs = root.appending(path: "Docs"), sup = root.appending(path: "Sup")
+        let old = Workspace(paths: Paths(appName: "Eski", documents: docs, appSupport: sup))
+        try old.restore()
+        old.updateText(old.tabs[0].id, "bir")
+        let second = try old.newTab()
+        old.updateText(second.id, "iki")
+        let saved = try old.newTab()
+        old.updateText(saved.id, "kayıtlı")
+        try old.saveAs(saved.id, to: docs.appending(path: "Eski/Liste.txt"))
+        old.select(second.id)
+        try old.flushAll()
+
+        try FolderMigration.migrate(documents: docs, appSupport: sup, from: "Eski", to: "Yeni")
+
+        let renamed = Workspace(paths: Paths(appName: "Yeni", documents: docs, appSupport: sup))
+        try renamed.restore()
+        XCTAssertEqual(renamed.tabs.map(\.text), ["bir", "iki", "kayıtlı"])
+        XCTAssertEqual(renamed.activeID, second.id)
+        XCTAssertEqual(renamed.tabs[2].kind, .file(docs.appending(path: "Yeni/Liste.txt")))
+    }
+}

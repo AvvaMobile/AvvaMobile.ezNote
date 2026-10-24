@@ -5,9 +5,9 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>Notepad#</string>
+    <string>ezNote</string>
     <key>CFBundleName</key>
-    <string>Notepad#</string>
+    <string>ezNote</string>
     <key>CFBundleExecutable</key>
     <string>Notepad</string>
     <key>CFBundleIdentifier</key>
