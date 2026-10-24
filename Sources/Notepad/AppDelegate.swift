@@ -83,6 +83,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.keyWindow?.performClose(nil)
     }
 
+    @objc func buyMeACoffeeAction(_ sender: Any?) {
+        NSWorkspace.shared.open(AppInfo.coffeeURL)
+    }
+
     @objc func showSettingsAction(_ sender: Any?) {
         if settingsWindow == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: fontModel)))
