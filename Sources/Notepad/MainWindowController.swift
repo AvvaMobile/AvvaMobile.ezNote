@@ -20,6 +20,8 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
         )
         window.title = AppInfo.name
         window.minSize = NSSize(width: 400, height: 250)
+        // Kendi sekme çubuğumuz var; macOS'un pencere sekmeleri ikinci bir çubuk açmasın.
+        window.tabbingMode = .disallowed
         super.init(window: window)
 
         if !window.setFrameUsingName("MainWindow") { window.center() }
