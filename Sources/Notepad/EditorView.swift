@@ -4,6 +4,7 @@ import NotepadCore
 /// Her sekmeye ayrı bir NSTextView (geri al geçmişi ve imleç sekmede kalsın); yalnız seçili olan görünür.
 final class EditorView: NSView {
     weak var textDelegate: NSTextViewDelegate?
+    var onOpenFiles: (([URL]) -> Void)?
     private var views: [UUID: NSScrollView] = [:]
     private(set) var undoManagers: [UUID: UndoManager] = [:]
     private var font: NSFont
@@ -72,10 +73,11 @@ final class EditorView: NSView {
     }
 
     private func makeScrollView(for id: UUID) -> NSScrollView {
-        let scroll = NSTextView.scrollableTextView()
+        let scroll = FileDropTextView.scrollableTextView()
         scroll.translatesAutoresizingMaskIntoConstraints = false
         scroll.borderType = .noBorder
-        let textView = scroll.documentView as! NSTextView
+        let textView = scroll.documentView as! FileDropTextView
+        textView.onOpenFiles = { [weak self] in self?.onOpenFiles?($0) }
         textView.isRichText = false
         textView.importsGraphics = false
         textView.allowsUndo = true
