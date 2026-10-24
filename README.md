@@ -1,10 +1,27 @@
-# ezNote
+<p align="center">
+  <img src="docs/images/icon.png" width="128" height="128" alt="ezNote icon" />
+</p>
 
-A tabbed plain-text notepad for macOS that never asks "Save changes?". Open a tab, type, quit. Your notes are still there next time.
+<h1 align="center">ezNote</h1>
 
-Website: https://avvamobile.github.io/AvvaMobile.ezNote/
+<p align="center">
+  <strong>The notepad that never asks “Save changes?”</strong><br />
+  Open a tab, type, quit. Your notes are still there next time.
+</p>
 
-![ezNote with three note tabs](docs/images/ezNote.png)
+<p align="center">
+  <a href="https://github.com/AvvaMobile/AvvaMobile.ezNote/releases/latest"><strong>Download for macOS</strong></a>
+  ·
+  <a href="https://avvamobile.github.io/AvvaMobile.ezNote/">Website</a>
+  ·
+  <a href="https://buymeacoffee.com/muratyilmaz">Buy me a coffee</a>
+</p>
+
+<p align="center">
+  <img src="docs/images/ezNote.png" alt="ezNote with three note tabs: Groceries, Meeting notes and Ideas" />
+</p>
+
+> **Your notes stay yours.** No account, no cloud, no analytics. Every note is a plain `.txt` file in your Documents folder.
 
 ## What it does
 
@@ -15,6 +32,12 @@ Website: https://avvamobile.github.io/AvvaMobile.ezNote/
 - **Plain text only.** UTF-8, line wrapping on, no smart quotes or auto-correct. Paste rich text and you get plain text.
 - **Your font, your size.** Pick any font and size in Settings (`⌘,`). Zoom with `⌘+` and `⌘−`.
 - **Plays well with other apps.** If a file you have open changes in another app and you have no unsaved edits in that tab, ezNote reloads it.
+
+### One question, only when it counts
+
+ezNote asks something only when you close a tab that still has text in it. Empty tabs just go away, and quitting never asks.
+
+<img src="docs/images/close-prompt.png" alt="ezNote asking “Do you want to save this note?” with Save, Delete and Cancel buttons" />
 
 ## Keyboard
 
