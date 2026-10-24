@@ -12,6 +12,8 @@
     <string>Notepad</string>
     <key>CFBundleIdentifier</key>
     <string>com.avvamobile.notepadsharp</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleInfoDictionaryVersion</key>
