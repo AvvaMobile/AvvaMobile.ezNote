@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             try workspace.restore()
         } catch {
-            showError("Notlar klasörü açılamadı", error)
+            showError("Couldn’t open the notes folder", error)
             NSApp.terminate(nil)
             return
         }
@@ -42,10 +42,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let error = windowController?.flushAll() else { return .terminateNow }
         let alert = NSAlert()
         alert.alertStyle = .critical
-        alert.messageText = "Bazı notlar kaydedilemedi"
-        alert.informativeText = error.localizedDescription + "\n\nÇıkarsan yazılamayan değişiklikler kaybolur."
-        alert.addButton(withTitle: "Vazgeç")
-        alert.addButton(withTitle: "Yine de Çık").hasDestructiveAction = true
+        alert.messageText = "Some notes couldn’t be saved"
+        alert.informativeText = error.localizedDescription + "\n\nIf you quit, the unsaved changes will be lost."
+        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "Quit Anyway").hasDestructiveAction = true
         return alert.runModal() == .alertSecondButtonReturn ? .terminateNow : .terminateCancel
     }
 
@@ -81,7 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func showSettingsAction(_ sender: Any?) {
         if settingsWindow == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: fontModel)))
-            window.title = "Ayarlar"
+            window.title = "Settings"
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()

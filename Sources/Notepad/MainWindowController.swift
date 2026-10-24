@@ -7,7 +7,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
     let editor: EditorView
     private var shownActiveID: UUID?
     private var autosaveID: UUID?
-    var saveErrorPresenter: (Error) -> Void = { showError("Kaydedilemedi", $0) }
+    var saveErrorPresenter: (Error) -> Void = { showError("Couldn’t Save", $0) }
     private var saveErrorShown = false
 
     init(workspace: Workspace, font: FontSettings) {
@@ -135,7 +135,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
             attempt { try workspace.close(id, discard: true) }
         case .askTemp:
             workspace.select(id)
-            ask("Bu not kaydedilsin mi?", info: "Sil dersen not Çöp Sepeti'ne taşınır.", buttons: ["Kaydet", "Sil", "Vazgeç"]) { [self] choice in
+            ask("Do you want to save this note?", info: "Delete moves the note to the Trash.", buttons: ["Save", "Delete", "Cancel"]) { [self] choice in
                 switch choice {
                 case 0: saveTab(id, forcePanel: true) { [self] in attempt { try workspace.close(id, discard: true) } }
                 case 1: attempt { try workspace.close(id, discard: true) }
@@ -144,7 +144,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
             }
         case .askFile:
             workspace.select(id)
-            ask("\"\(doc.kind.url.lastPathComponent)\" dosyasındaki değişiklikler kaydedilsin mi?", info: "", buttons: ["Kaydet", "Kaydetme", "Vazgeç"]) { [self] choice in
+            ask("Do you want to save the changes made to \"\(doc.kind.url.lastPathComponent)\"?", info: "", buttons: ["Save", "Don’t Save", "Cancel"]) { [self] choice in
                 switch choice {
                 case 0: saveTab(id, forcePanel: false) { [self] in attempt { try workspace.close(id, discard: true) } }
                 case 1: attempt { try workspace.close(id, discard: true) }
@@ -174,7 +174,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
     private func saveTab(_ id: UUID, forcePanel: Bool, then: (() -> Void)? = nil) {
         guard let doc = workspace.tab(id) else { return }
         guard forcePanel || workspace.needsSavePanel(id) else {
-            if attempt("Kaydedilemedi", { try workspace.save(id) }) { then?() }
+            if attempt("Couldn’t Save", { try workspace.save(id) }) { then?() }
             return
         }
         guard let window else { return }
@@ -184,7 +184,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
         panel.nameFieldStringValue = suggestedFileName(doc)
         panel.beginSheetModal(for: window) { [self] response in
             guard response == .OK, let url = panel.url else { return }
-            if attempt("Kaydedilemedi", { try workspace.saveAs(id, to: url) }) { then?() }
+            if attempt("Couldn’t Save", { try workspace.saveAs(id, to: url) }) { then?() }
         }
     }
 
@@ -198,7 +198,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
 
     /// Hata olursa kullanıcıya gösterir.
     @discardableResult
-    func attempt(_ title: String = "Kaydedilemedi", _ work: () throws -> Void) -> Bool {
+    func attempt(_ title: String = "Couldn’t Save", _ work: () throws -> Void) -> Bool {
         do {
             try work()
             return true
@@ -209,7 +209,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
     }
 
     @objc func newTabAction(_ sender: Any?) {
-        attempt("Yeni sekme açılamadı") { try workspace.newTab() }
+        attempt("Couldn’t Open a New Tab") { try workspace.newTab() }
     }
 
     @objc func closeTabAction(_ sender: Any?) {
@@ -243,11 +243,11 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
         } catch TextFileError.notUTF8 {
             let alert = NSAlert()
             alert.alertStyle = .warning
-            alert.messageText = "Bu dosya açılamadı"
-            alert.informativeText = "\(AppInfo.name) yalnız UTF-8 düz metin dosyalarını açabilir."
+            alert.messageText = "This file can’t be opened"
+            alert.informativeText = "\(AppInfo.name) can only open UTF-8 plain text files."
             alert.runModal()
         } catch {
-            showError("Bu dosya açılamadı", error)
+            showError("This file can’t be opened", error)
         }
     }
 }

@@ -19,7 +19,7 @@ final class LogicTests: XCTestCase {
     }
 
     func testTitleTempEmptyUsesUntitled() {
-        XCTAssertEqual(TabTitle.make(text: "\n\nabc", kind: temp, untitledNumber: 2), "Adsız 2")
+        XCTAssertEqual(TabTitle.make(text: "\n\nabc", kind: temp, untitledNumber: 2), "Untitled 2")
     }
 
     func testTitleFileUsesFileName() {

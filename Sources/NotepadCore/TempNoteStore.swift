@@ -1,6 +1,7 @@
 import Foundation
 
-/// Notlar klasöründeki temp notlar: "Not 2026-10-22 14.30.05.txt", çakışmada " 2", " 3" eki.
+/// Notlar klasöründeki temp notlar: "Note 2026-10-22 14.30.05.txt", çakışmada " 2", " 3" eki.
+/// Türkçe sürümün "Not ..." adlı eski notları da temp sayılır.
 public struct TempNoteStore {
     public let dir: URL
     private let trash: (URL) throws -> Void
@@ -17,10 +18,10 @@ public struct TempNoteStore {
         return f
     }()
 
-    private static let namePattern = try! Regex(#"^Not \d{4}-\d{2}-\d{2} \d{2}\.\d{2}\.\d{2}( \d+)?\.txt$"#)
+    private static let namePattern = try! Regex(#"^Note? \d{4}-\d{2}-\d{2} \d{2}\.\d{2}\.\d{2}( \d+)?\.txt$"#)
 
     public func create(now: Date) throws -> URL {
-        let base = "Not \(Self.formatter.string(from: now))"
+        let base = "Note \(Self.formatter.string(from: now))"
         var url = dir.appending(path: "\(base).txt")
         var n = 2
         while FileManager.default.fileExists(atPath: url.path) {
