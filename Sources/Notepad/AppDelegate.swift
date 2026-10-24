@@ -9,6 +9,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
     private let lastAppNameKey = "lastAppName"
 
+    /// Menü kurulmadan önce: macOS View menüsüne "Show Tab Bar" / "Show All Tabs" eklemesin.
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSWindow.allowsAutomaticWindowTabbing = false
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         migrateIfRenamed()
         NSApp.mainMenu = MainMenu.build()
