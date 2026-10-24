@@ -33,6 +33,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
         tabBar.onSelect = { [weak self] in self?.workspace.select($0) }
         tabBar.onClose = { [weak self] in self?.closeTab($0) }
         tabBar.onNew = { [weak self] in self?.newTabAction(nil) }
+        tabBar.onMove = { [weak self] in self?.workspace.move($0, to: $1) }
         workspace.onChange = { [weak self] in self?.sync() }
         sync()
     }

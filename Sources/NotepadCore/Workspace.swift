@@ -75,6 +75,16 @@ public final class Workspace {
         onChange?()
     }
 
+    /// Sekmeyi `index`'e taşır; seçili sekme değişmez, yeni sıra oturuma yazılır.
+    public func move(_ id: UUID, to index: Int) {
+        guard let from = tabs.firstIndex(where: { $0.id == id }) else { return }
+        let to = min(max(index, 0), tabs.count - 1)
+        guard from != to else { return }
+        tabs.insert(tabs.remove(at: from), at: to)
+        try? persistSession()
+        onChange?()
+    }
+
     public func updateText(_ id: UUID, _ text: String) {
         guard let doc = tab(id) else { return }
         doc.text = text

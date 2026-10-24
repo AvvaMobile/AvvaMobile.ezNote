@@ -89,6 +89,36 @@ final class WorkspaceTests: WorkspaceTestCase {
         XCTAssertEqual(again.activeID, ws.tabs[1].id)
     }
 
+    func testMoveToFrontKeepsActiveTab() throws {
+        let ws = try restored()
+        let first = ws.tabs[0]
+        let second = try ws.newTab()
+        let third = try ws.newTab()
+        ws.move(third.id, to: 0)
+        XCTAssertEqual(ws.tabs.map(\.id), [third.id, first.id, second.id])
+        XCTAssertEqual(ws.activeID, third.id)
+    }
+
+    func testMoveToEnd() throws {
+        let ws = try restored()
+        let first = ws.tabs[0]
+        let second = try ws.newTab()
+        let third = try ws.newTab()
+        ws.move(first.id, to: 2)
+        XCTAssertEqual(ws.tabs.map(\.id), [second.id, third.id, first.id])
+    }
+
+    func testMovedOrderSurvivesRestore() throws {
+        let ws = try restored()
+        ws.updateText(ws.tabs[0].id, "bir")
+        ws.updateText(try ws.newTab().id, "iki")
+        try ws.flushAll()
+        ws.move(ws.tabs[1].id, to: 0)
+
+        let again = try restored()
+        XCTAssertEqual(again.tabs.map(\.text), ["iki", "bir"])
+    }
+
     func testRestoreSkipsMissingTempFile() throws {
         let ws = try restored()
         ws.updateText(ws.tabs[0].id, "kalsın")
