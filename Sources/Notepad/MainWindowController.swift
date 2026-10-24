@@ -30,6 +30,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
         window.delegate = self
 
         editor.textDelegate = self
+        editor.onOpenFiles = { [weak self] in self?.openFiles($0) }
         tabBar.onSelect = { [weak self] in self?.workspace.select($0) }
         tabBar.onClose = { [weak self] in self?.closeTab($0) }
         tabBar.onNew = { [weak self] in self?.newTabAction(nil) }
@@ -41,7 +42,8 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
     required init?(coder: NSCoder) { fatalError() }
 
     private func layout(in window: NSWindow) {
-        let content = NSView()
+        let content = FileDropView()
+        content.onOpenFiles = { [weak self] in self?.openFiles($0) }
         for view in [tabBar, editor] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
             content.addSubview(view)
@@ -238,6 +240,11 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
             // Uyarı gerekirse panel kapandıktan sonra çıksın.
             DispatchQueue.main.async { [self] in urls.forEach(open) }
         }
+    }
+
+    /// Sürükle-bırak ve Dock'tan gelenler; yalnız .txt açılır.
+    func openFiles(_ urls: [URL]) {
+        FileDrop.textFiles(urls).forEach(open)
     }
 
     private func open(_ url: URL) {

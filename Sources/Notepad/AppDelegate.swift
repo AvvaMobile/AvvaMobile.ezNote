@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var fontModel = FontModel(settings: fontStore.load())
     private var settingsWindow: NSWindow?
     private let lastAppNameKey = "lastAppName"
+    /// Dock'a bırakılıp uygulamayı başlatan dosyalar; pencere kurulunca açılır.
+    private(set) var pendingOpen: [URL] = []
 
     /// Menü kurulmadan önce: macOS View menüsüne "Show Tab Bar" / "Show All Tabs" eklemesin.
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -34,6 +36,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         windowController = controller
         controller.showWindow(nil)
+        controller.openFiles(pendingOpen)
+        pendingOpen = []
+        NSApp.activate()
+    }
+
+    /// Dock ikonuna bırakılan (ya da "Birlikte Aç" ile gelen) dosyalar.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let windowController else {
+            pendingOpen += urls
+            return
+        }
+        windowController.openFiles(urls)
         NSApp.activate()
     }
 
