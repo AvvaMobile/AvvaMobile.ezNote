@@ -1,5 +1,5 @@
 // Uygulama simgesini üretir: swift scripts/make-icon.swift <çıktı.iconset>
-// Mavi zemin üstünde beyaz, spiralli ve çizgili bir not kâğıdı.
+// Beyaz zemin üstünde mavi, spiralli ve çizgili bir not kâğıdı.
 import AppKit
 
 let output = URL(fileURLWithPath: CommandLine.arguments[1])
@@ -22,19 +22,19 @@ func render(_ pixels: Int) -> Data {
     // Zemin
     let body = NSRect(x: 100, y: 100, width: 824, height: 824)
     let bodyPath = NSBezierPath(roundedRect: body, xRadius: 185, yRadius: 185)
-    NSGradient(starting: rgb(98, 178, 247), ending: rgb(38, 104, 214))!.draw(in: bodyPath, angle: -90)
+    NSGradient(starting: rgb(255, 255, 255), ending: rgb(242, 244, 248))!.draw(in: bodyPath, angle: -90)
 
-    // Simge tek renk beyaz; ayrıntılar zeminin mavisiyle "oyulur".
-    let white = rgb(255, 255, 255)
-    let cut = rgb(58, 132, 228)
+    // Simge tek renk mavi; ayrıntılar zeminin beyazıyla "oyulur".
+    let blue = rgb(58, 132, 228)
+    let cut = rgb(250, 251, 253)
 
     // Kâğıt: halkalarla birlikte zeminin tam ortasında, her yandan geniş boşluk
     let ringOverhang: CGFloat = 44
     let paperSize = NSSize(width: 420, height: 470)
     let paper = NSRect(x: (1024 - paperSize.width) / 2, y: (1024 - paperSize.height - ringOverhang) / 2,
                        width: paperSize.width, height: paperSize.height)
-    white.setFill()
-    NSBezierPath(roundedRect: paper, xRadius: 34, yRadius: 34).fill()
+    NSGradient(starting: rgb(98, 178, 247), ending: rgb(38, 104, 214))!
+        .draw(in: NSBezierPath(roundedRect: paper, xRadius: 34, yRadius: 34), angle: -90)
 
     // Üst şeridi kâğıttan ayıran boşluk
     cut.setFill()
@@ -46,7 +46,7 @@ func render(_ pixels: Int) -> Data {
                      xRadius: 6.5, yRadius: 6.5).fill()
     }
 
-    // Spiral halkalar: kâğıttaki delik mavi, halka beyaz ve mavi çerçeveli
+    // Spiral halkalar: kâğıttaki delik beyaz, halka mavi ve beyaz çerçeveli
     for i in 0..<5 {
         let x = paper.minX + 62 + CGFloat(i) * 74
         cut.setFill()
@@ -55,7 +55,7 @@ func render(_ pixels: Int) -> Data {
         cut.setStroke()
         ring.lineWidth = 11
         ring.stroke()
-        white.setFill()
+        blue.setFill()
         ring.fill()
     }
 
