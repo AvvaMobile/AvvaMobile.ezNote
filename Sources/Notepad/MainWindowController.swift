@@ -184,7 +184,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
         }
         guard let window else { return }
         let panel = NSSavePanel()
-        panel.allowedContentTypes = [.plainText]
+        panel.allowedContentTypes = [.plainText, .json]
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = suggestedFileName(doc)
         panel.beginSheetModal(for: window) { [self] response in
