@@ -3,7 +3,7 @@ import XCTest
 @testable import Notepad
 @testable import NotepadCore
 
-/// Finder'dan pencereye ya da Dock ikonuna bırakılan .txt dosyaları sekmede açılır; diğerleri yok sayılır.
+/// Finder'dan pencereye ya da Dock ikonuna bırakılan .txt ve .json dosyaları sekmede açılır; diğerleri yok sayılır.
 final class FileDropTests: XCTestCase {
     private var root: URL!
     private var controller: MainWindowController!
@@ -32,19 +32,19 @@ final class FileDropTests: XCTestCase {
         workspace.tabs.filter { !$0.kind.isTemp }.map(\.kind.url.canonical)
     }
 
-    func testOnlyTxtFilesAreTakenFromPasteboard() throws {
-        let txt = try file("a.txt"), upper = try file("B.TXT"), md = try file("c.md")
+    func testOnlyTxtAndJsonFilesAreTakenFromPasteboard() throws {
+        let txt = try file("a.txt"), upper = try file("B.TXT"), json = try file("d.json"), md = try file("c.md")
         let board = NSPasteboard(name: .init("FileDropTests-\(UUID().uuidString)"))
         defer { board.releaseGlobally() }
         board.clearContents()
-        board.writeObjects([txt, upper, md] as [NSURL])
-        XCTAssertEqual(FileDrop.textFiles(on: board).map(\.canonical), [txt.canonical, upper.canonical])
+        board.writeObjects([txt, upper, json, md] as [NSURL])
+        XCTAssertEqual(FileDrop.textFiles(on: board).map(\.canonical), [txt.canonical, upper.canonical, json.canonical])
     }
 
-    func testOpenFilesOpensOnlyTxt() throws {
-        let txt = try file("a.txt"), md = try file("c.md")
-        controller.openFiles([txt, md])
-        XCTAssertEqual(openURLs, [txt.canonical])
+    func testOpenFilesOpensOnlyTxtAndJson() throws {
+        let txt = try file("a.txt"), json = try file("D.JSON"), md = try file("c.md")
+        controller.openFiles([txt, json, md])
+        XCTAssertEqual(openURLs, [txt.canonical, json.canonical])
     }
 
     func testDropOnEditorOpensFile() throws {
