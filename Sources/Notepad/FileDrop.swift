@@ -1,17 +1,19 @@
 import AppKit
 
-/// Finder'dan sürüklenen dosyalardan yalnız .txt olanlar açılır.
+/// Finder'dan sürüklenen dosyalardan yalnız .txt ve .json olanlar açılır.
 enum FileDrop {
+    static let extensions: Set<String> = ["txt", "json"]
+
     static func textFiles(on pasteboard: NSPasteboard) -> [URL] {
         let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
         return textFiles(urls)
     }
 
     static func textFiles(_ urls: [URL]) -> [URL] {
-        urls.filter { $0.pathExtension.lowercased() == "txt" }
+        urls.filter { extensions.contains($0.pathExtension.lowercased()) }
     }
 
-    /// İçinde .txt varsa bırakmayı kabul eder; yoksa `nil` (görünüm kendi davranışına bırakır).
+    /// İçinde açılabilir dosya varsa bırakmayı kabul eder; yoksa `nil` (görünüm kendi davranışına bırakır).
     static func operation(for sender: NSDraggingInfo) -> NSDragOperation? {
         textFiles(on: sender.draggingPasteboard).isEmpty ? nil : .copy
     }
@@ -38,7 +40,7 @@ final class FileDropView: NSView {
     }
 }
 
-/// Editör: .txt bırakılınca dosyayı açar; diğer bırakmalar NSTextView'a kalır (yolu metne yazar).
+/// Editör: .txt ya da .json bırakılınca dosyayı açar; diğer bırakmalar NSTextView'a kalır (yolu metne yazar).
 final class FileDropTextView: NSTextView {
     var onOpenFiles: (([URL]) -> Void)?
 
