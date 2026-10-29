@@ -157,7 +157,30 @@ final class TabBarView: NSView {
     }
 }
 
-private final class TabItemView: NSView {
+/// Fare üstüne gelince `isHovered` olur ve yeniden çizilir.
+private class HoverView: NSView {
+    private(set) var isHovered = false {
+        didSet { needsDisplay = true }
+    }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self))
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+    }
+}
+
+/// Üstü yuvarlak sekme; aktif olan editörle aynı renktir, diğerleri ince çerçeveyle ayrılır.
+private final class TabItemView: HoverView {
     var onMouseDown: ((NSEvent) -> Void)?
     var onClose: (() -> Void)?
     let id: UUID
@@ -168,8 +191,6 @@ private final class TabItemView: NSView {
         self.isActive = isActive
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.cornerRadius = 6
-        layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         toolTip = item.title
 
         let label = NSTextField(labelWithString: (item.isDirty ? "• " : "") + item.title)
@@ -203,11 +224,27 @@ private final class TabItemView: NSView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    override func updateLayer() {
-        layer?.backgroundColor = isActive ? NSColor.textBackgroundColor.cgColor : NSColor.clear.cgColor
+    /// Alt kenar editöre açılır, o yüzden çerçeve yalnız üstte ve yanlarda.
+    override func draw(_ dirtyRect: NSRect) {
+        let rect = NSRect(x: 0.5, y: 0, width: bounds.width - 1, height: bounds.height - 0.5)
+        let radius: CGFloat = 6
+        let path = NSBezierPath()
+        path.move(to: NSPoint(x: rect.minX, y: rect.minY))
+        path.appendArc(from: NSPoint(x: rect.minX, y: rect.maxY), to: NSPoint(x: rect.midX, y: rect.maxY), radius: radius)
+        path.appendArc(from: NSPoint(x: rect.maxX, y: rect.maxY), to: NSPoint(x: rect.maxX, y: rect.minY), radius: radius)
+        path.line(to: NSPoint(x: rect.maxX, y: rect.minY))
+        if isActive {
+            NSColor.textBackgroundColor.setFill()
+            path.fill()
+            return
+        }
+        if isHovered {
+            NSColor.quaternaryLabelColor.setFill()
+            path.fill()
+        }
+        NSColor.separatorColor.setStroke()
+        path.stroke()
     }
-
-    override var wantsUpdateLayer: Bool { true }
 
     override func mouseDown(with event: NSEvent) {
         onMouseDown?(event)
@@ -227,11 +264,8 @@ private final class TabItemView: NSView {
 }
 
 /// En sondaki "+": rahat tıklanacak kadar geniş, üstüne gelince arka planı koyulaşır.
-private final class NewTabButton: NSView {
+private final class NewTabButton: HoverView {
     var onClick: (() -> Void)?
-    private var isHovered = false {
-        didSet { needsDisplay = true }
-    }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -253,7 +287,6 @@ private final class NewTabButton: NSView {
             button.topAnchor.constraint(equalTo: topAnchor),
             button.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
-        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self))
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -263,14 +296,6 @@ private final class NewTabButton: NSView {
     }
 
     override var wantsUpdateLayer: Bool { true }
-
-    override func mouseEntered(with event: NSEvent) {
-        isHovered = true
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        isHovered = false
-    }
 
     @objc private func clicked() {
         onClick?()
