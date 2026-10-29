@@ -6,6 +6,7 @@ final class TabBarView: NSView {
     static let tabWidth: CGFloat = 180
     static let spacing: CGFloat = 2
     static let leftInset: CGFloat = 6
+    static let plusGap: CGFloat = 6
 
     static func slotOrigin(_ index: Int) -> CGFloat {
         leftInset + CGFloat(index) * (tabWidth + spacing)
@@ -29,7 +30,9 @@ final class TabBarView: NSView {
     var onMove: ((UUID, Int) -> Void)?
 
     private let scroll = NSScrollView()
+    private let content = NSView()
     private let stack = NSStackView()
+    private let plus = NewTabButton()
     private var items: [Item] = []
     private var activeID: UUID?
 
@@ -37,14 +40,21 @@ final class TabBarView: NSView {
         super.init(frame: frame)
         stack.orientation = .horizontal
         stack.spacing = Self.spacing
-        stack.edgeInsets = NSEdgeInsets(top: 4, left: Self.leftInset, bottom: 0, right: Self.leftInset)
+        stack.edgeInsets = NSEdgeInsets(top: 4, left: Self.leftInset, bottom: 0, right: 0)
         stack.alignment = .bottom
-        stack.translatesAutoresizingMaskIntoConstraints = false
+        plus.onClick = { [weak self] in self?.onNew?() }
+
+        // "+" yığının dışında durur; sekme sürüklerken sıra hesabına karışmaz, yeniden çizimde hover'ı kaybolmaz.
+        for view in [stack, plus] as [NSView] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            content.addSubview(view)
+        }
+        content.translatesAutoresizingMaskIntoConstraints = false
 
         scroll.drawsBackground = false
         scroll.hasHorizontalScroller = false
         scroll.hasVerticalScroller = false
-        scroll.documentView = stack
+        scroll.documentView = content
         scroll.translatesAutoresizingMaskIntoConstraints = false
         addSubview(scroll)
 
@@ -53,9 +63,15 @@ final class TabBarView: NSView {
             scroll.trailingAnchor.constraint(equalTo: trailingAnchor),
             scroll.topAnchor.constraint(equalTo: topAnchor),
             scroll.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stack.topAnchor.constraint(equalTo: scroll.contentView.topAnchor),
-            stack.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
-            stack.heightAnchor.constraint(equalTo: scroll.contentView.heightAnchor),
+            content.topAnchor.constraint(equalTo: scroll.contentView.topAnchor),
+            content.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
+            content.heightAnchor.constraint(equalTo: scroll.contentView.heightAnchor),
+            stack.topAnchor.constraint(equalTo: content.topAnchor),
+            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            stack.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            plus.leadingAnchor.constraint(equalTo: stack.trailingAnchor, constant: Self.plusGap),
+            plus.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -Self.leftInset),
+            plus.centerYAnchor.constraint(equalTo: content.centerYAnchor, constant: 2),
         ])
     }
 
@@ -74,20 +90,11 @@ final class TabBarView: NSView {
             tab.onClose = { [weak self] in self?.onClose?(item.id) }
             stack.addArrangedSubview(tab)
         }
-        let plus = NSButton(image: NSImage(systemSymbolName: "plus", accessibilityDescription: "New Tab")!, target: self, action: #selector(newTab))
-        plus.isBordered = false
-        plus.toolTip = "New Tab"
-        stack.addArrangedSubview(plus)
-        plus.centerYAnchor.constraint(equalTo: stack.centerYAnchor, constant: 2).isActive = true
 
         layoutSubtreeIfNeeded()
         if let active = stack.arrangedSubviews.first(where: { ($0 as? TabItemView)?.isActive == true }) {
             active.scrollToVisible(active.bounds)
         }
-    }
-
-    @objc private func newTab() {
-        onNew?()
     }
 
     private var tabViews: [TabItemView] {
@@ -211,5 +218,56 @@ private final class TabItemView: NSView {
 
     @objc private func closeTapped() {
         onClose?()
+    }
+}
+
+/// En sondaki "+": rahat tıklanacak kadar geniş, üstüne gelince arka planı koyulaşır.
+private final class NewTabButton: NSView {
+    var onClick: (() -> Void)?
+    private var isHovered = false {
+        didSet { needsDisplay = true }
+    }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layer?.cornerRadius = 5
+
+        let button = NSButton(image: NSImage(systemSymbolName: "plus", accessibilityDescription: "New Tab")!, target: nil, action: nil)
+        button.isBordered = false
+        button.toolTip = "New Tab"
+        button.target = self
+        button.action = #selector(clicked)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(button)
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: 24),
+            heightAnchor.constraint(equalToConstant: 24),
+            button.leadingAnchor.constraint(equalTo: leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: trailingAnchor),
+            button.topAnchor.constraint(equalTo: topAnchor),
+            button.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self))
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func updateLayer() {
+        layer?.backgroundColor = isHovered ? NSColor.quaternaryLabelColor.cgColor : NSColor.clear.cgColor
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+    }
+
+    @objc private func clicked() {
+        onClick?()
     }
 }
