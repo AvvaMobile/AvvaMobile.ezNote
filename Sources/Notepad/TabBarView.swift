@@ -97,6 +97,11 @@ final class TabBarView: NSView {
         }
     }
 
+    /// Sekmeler tıklamayı kendileri alır; buraya yalnız çubuğun boş yerine yapılan tıklamalar düşer.
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 { onNew?() }
+    }
+
     private var tabViews: [TabItemView] {
         stack.arrangedSubviews.compactMap { $0 as? TabItemView }
     }
