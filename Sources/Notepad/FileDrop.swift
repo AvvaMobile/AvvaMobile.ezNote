@@ -1,8 +1,10 @@
 import AppKit
+import UniformTypeIdentifiers
 
-/// Finder'dan sürüklenen dosyalardan yalnız .txt ve .json olanlar açılır.
+/// Finder'dan sürüklenen dosyalardan yalnız metin olanlar açılır.
 enum FileDrop {
-    static let extensions: Set<String> = ["txt", "json"]
+    /// Türü tanınmayan dosyada içeriğin bu kadar baytına bakılır.
+    static let sniffLength = 8192
 
     static func textFiles(on pasteboard: NSPasteboard) -> [URL] {
         let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
@@ -10,7 +12,29 @@ enum FileDrop {
     }
 
     static func textFiles(_ urls: [URL]) -> [URL] {
-        urls.filter { extensions.contains($0.pathExtension.lowercased()) }
+        urls.filter(isText)
+    }
+
+    /// Uzantı metin türündense metindir (RTF hariç); tanınmazsa içerik UTF-8 ve boş baytsız mı diye bakılır.
+    static func isText(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), !isDirectory.boolValue else { return false }
+        if let type = UTType(filenameExtension: url.pathExtension) {
+            if type.conforms(to: .rtf) { return false }
+            if type.conforms(to: .text) { return true }
+        }
+        return hasTextContent(url)
+    }
+
+    private static func hasTextContent(_ url: URL) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
+        defer { try? handle.close() }
+        guard let data = try? handle.read(upToCount: sniffLength + 3), !data.isEmpty else { return true }
+        if data.contains(0) { return false }
+        // Sınırda bölünmüş çok baytlı karakter yüzünden reddetmemek için sondan 3 bayta kadar kırpılarak denenir.
+        let head = data.prefix(sniffLength)
+        let cuts = data.count > sniffLength ? 0...3 : 0...0
+        return cuts.contains { String(data: head.dropLast($0), encoding: .utf8) != nil }
     }
 
     /// İçinde açılabilir dosya varsa bırakmayı kabul eder; yoksa `nil` (görünüm kendi davranışına bırakır).
@@ -40,7 +64,7 @@ final class FileDropView: NSView {
     }
 }
 
-/// Editör: .txt ya da .json bırakılınca dosyayı açar; diğer bırakmalar NSTextView'a kalır (yolu metne yazar).
+/// Editör: metin dosyası bırakılınca dosyayı açar; diğer bırakmalar NSTextView'a kalır (yolu metne yazar).
 final class FileDropTextView: NSTextView {
     var onOpenFiles: (([URL]) -> Void)?
 

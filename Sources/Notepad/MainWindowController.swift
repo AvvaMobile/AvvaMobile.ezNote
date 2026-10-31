@@ -242,7 +242,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
         }
     }
 
-    /// Sürükle-bırak ve Dock'tan gelenler; yalnız .txt ve .json açılır.
+    /// Sürükle-bırak ve Dock'tan gelenler; yalnız metin dosyaları açılır.
     func openFiles(_ urls: [URL]) {
         FileDrop.textFiles(urls).forEach(open)
     }
