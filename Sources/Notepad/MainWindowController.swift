@@ -232,7 +232,7 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
     @objc func openAction(_ sender: Any?) {
         guard let window else { return }
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.plainText, .json]
+        panel.delegate = TextFilePanelFilter.shared
         panel.allowsMultipleSelection = true
         panel.beginSheetModal(for: window) { [self] response in
             guard response == .OK else { return }

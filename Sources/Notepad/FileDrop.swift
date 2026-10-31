@@ -43,6 +43,15 @@ enum FileDrop {
     }
 }
 
+/// Aç penceresinde yalnız metin dosyaları (ve gezinmek için klasörler) seçilebilir.
+final class TextFilePanelFilter: NSObject, NSOpenSavePanelDelegate {
+    static let shared = TextFilePanelFilter()
+
+    func panel(_ sender: Any, shouldEnable url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true || FileDrop.isText(url)
+    }
+}
+
 /// Sekme çubuğu ve pencerenin boş yerleri için bırakma alanı.
 final class FileDropView: NSView {
     var onOpenFiles: (([URL]) -> Void)?

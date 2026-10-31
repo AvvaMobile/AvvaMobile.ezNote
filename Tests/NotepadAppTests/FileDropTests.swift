@@ -106,6 +106,18 @@ final class FileDropTests: XCTestCase {
         XCTAssertEqual(openURLs, [txt.canonical])
     }
 
+    func testOpenPanelEnablesOnlyTextFilesAndFolders() throws {
+        let panel = NSOpenPanel()
+        let filter = TextFilePanelFilter.shared
+        let folder = root.appending(path: "klasor")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        XCTAssertTrue(filter.panel(panel, shouldEnable: try file("a.md")))
+        XCTAssertTrue(filter.panel(panel, shouldEnable: try file("Makefile")))
+        XCTAssertTrue(filter.panel(panel, shouldEnable: folder))
+        XCTAssertFalse(filter.panel(panel, shouldEnable: try file("b.rtf")))
+        XCTAssertFalse(filter.panel(panel, shouldEnable: try file("c.png", bytes: [0x89, 0x50, 0x00])))
+    }
+
     func testDockDropBeforeLaunchIsKeptUntilWindowExists() throws {
         let txt = try file("a.txt")
         let delegate = AppDelegate()
