@@ -183,14 +183,19 @@ final class MainWindowController: NSWindowController, NSTextViewDelegate, NSWind
             return
         }
         guard let window else { return }
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.plainText, .json]
-        panel.canCreateDirectories = true
-        panel.nameFieldStringValue = suggestedFileName(doc)
+        let panel = makeSavePanel(for: doc)
         panel.beginSheetModal(for: window) { [self] response in
             guard response == .OK, let url = panel.url else { return }
             if attempt("Couldn’t Save", { try workspace.saveAs(id, to: url) }) { then?() }
         }
+    }
+
+    /// Tür kısıtı yok: yazılan ad olduğu gibi kullanılır (ör. .html'e .txt eklenmez).
+    func makeSavePanel(for doc: TabDocument) -> NSSavePanel {
+        let panel = NSSavePanel()
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = suggestedFileName(doc)
+        return panel
     }
 
     private func suggestedFileName(_ doc: TabDocument) -> String {
