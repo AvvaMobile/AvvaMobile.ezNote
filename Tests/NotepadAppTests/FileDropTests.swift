@@ -118,6 +118,19 @@ final class FileDropTests: XCTestCase {
         XCTAssertFalse(filter.panel(panel, shouldEnable: try file("c.png", bytes: [0x89, 0x50, 0x00])))
     }
 
+    func testSavePanelKeepsAnyTextExtension() throws {
+        for name in ["a.html", "Makefile", "b.css"] {
+            let doc = try workspace.open(try file(name))
+            let panel = controller.makeSavePanel(for: doc)
+            XCTAssertTrue(panel.allowedContentTypes.isEmpty, name)
+            XCTAssertEqual(panel.nameFieldStringValue, name)
+        }
+    }
+
+    func testSavePanelSuggestsTxtForNewNote() throws {
+        XCTAssertTrue(controller.makeSavePanel(for: workspace.tabs[0]).nameFieldStringValue.hasSuffix(".txt"))
+    }
+
     func testDockDropBeforeLaunchIsKeptUntilWindowExists() throws {
         let txt = try file("a.txt")
         let delegate = AppDelegate()
